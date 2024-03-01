@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -10,18 +8,21 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
-    public GameObject GameOverText;
+    [SerializeField] private Text _highscoreText;
+    [SerializeField] private Text _scoreText;
+    [SerializeField] private GameObject _gameOverText, _newHighScoreText;
     
-    private bool m_Started = false;
-    private int m_Points;
+    private bool _isStarted = false;
+    private int _points;
     
-    private bool m_GameOver = false;
+    private bool _isGameOver = false;
 
     
     // Start is called before the first frame update
     void Start()
     {
+        _highscoreText.text = DataManager.Data.Username + "'s Highscore: " + DataManager.Data.Highscore;
+        
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -40,11 +41,11 @@ public class MainManager : MonoBehaviour
 
     private void Update()
     {
-        if (!m_Started)
+        if (!_isStarted)
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                m_Started = true;
+                _isStarted = true;
                 float randomDirection = Random.Range(-1.0f, 1.0f);
                 Vector3 forceDir = new Vector3(randomDirection, 1, 0);
                 forceDir.Normalize();
@@ -53,24 +54,47 @@ public class MainManager : MonoBehaviour
                 Ball.AddForce(forceDir * 2.0f, ForceMode.VelocityChange);
             }
         }
-        else if (m_GameOver)
+        else if (_isGameOver)
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            }
+
+            if(Input.GetKeyDown(KeyCode.Escape))
+            {
+                ExitToMenu();
             }
         }
     }
 
     void AddPoint(int point)
     {
-        m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        _points += point;
+        _scoreText.text = $"Score : {_points}";
     }
 
     public void GameOver()
     {
-        m_GameOver = true;
-        GameOverText.SetActive(true);
+        UpdateHighscore();
+        DataManager.Data.SaveUserData();
+
+        if(_points == DataManager.Data.Highscore)
+            _newHighScoreText.SetActive(true);
+
+        _isGameOver = true;
+        _gameOverText.SetActive(true);
+    }
+
+    void UpdateHighscore()
+    {
+        if(_points > DataManager.Data.Highscore)
+            DataManager.Data.Highscore = _points;
+    }
+
+    public void ExitToMenu()
+    {
+        GameOver();
+        SceneManager.LoadScene(0);
     }
 }
